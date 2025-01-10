@@ -1,42 +1,45 @@
-const user = document.getElementById("user");
-const password = document.getElementById("password");
-const btnConfirma = document.getElementById("btnConfirma");
-const erroAutentic = document.getElementById("erroAutentic");
+const userInput = document.getElementById('user');
+const passwordInput = document.getElementById('password');
+const btnLogin = document.getElementById('btnConfirma');
+const errorMsg = document.getElementById('erroAutentic');
+const modalLogin = document.getElementById('modalLogin');
 
-const funcionario = { user: "admin", password: "admin" };
-const cliente = { user: "client", password: "client" };
+btnLogin.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = userInput.value.trim();
+  const password = passwordInput.value.trim();
 
-btnConfirma.addEventListener("click", (e) => {
-    e.preventDefault();
+  if (!email || !password) {
+    displayError('Preencha todos os campos.');
+    return;
+  }
 
-    fetch("http://localhost:8080/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            email: user.value,
-            senha: password.value,
-        }),
+  try {
+    const response = await fetch('http://localhost:8080/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha: password }),
+    });
 
-    })
-    .then(response => response.json())
-    .then((data) => {
-        localStorage.setItem('user', data.email);
-        localStorage.setItem('userId', data.id);
+    if (!response.ok) throw new Error('Falha na autenticação');
 
-            if (data.usuarioRole === "USUARIO") {
-                window.location.href = "./home.html";
-                console.log("Logado");
-            }else if (data.usuarioRole === "ADMIN"){
-                window.location.href = "./admin/home_admin.html";
+    const data = await response.json();
+    localStorage.setItem('user', data.email);
+    localStorage.setItem('userId', data.id);
 
-            } else {
-                console.log("Usuario e senha invalida");
-                erroAutentic.classList.remove("d-none")
-            }
-
-
-        }
-    );
+    window.location.href = data.usuarioRole === 'ADMIN' ? './admin/home_admin.html' : './home.html';
+  } catch (error) {
+    displayError('Usuário ou senha inválidos.');
+  }
 });
+
+function displayError(message) {
+  errorMsg.textContent = message;
+  errorMsg.classList.remove('d-none');
+}
+
+function verificaLogin() {
+  if (!localStorage.getItem('user')) {
+    modalLogin.style.display = 'block';
+  }
+}
